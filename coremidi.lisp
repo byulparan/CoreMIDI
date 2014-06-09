@@ -120,6 +120,8 @@
   (:documentation "Send MIDI message to given destination. timestamp == 0 mean it \"now\".
  Otherwise timestamp must based on time of scheduler."))
 
+(defvar *sync-tool* nil)
+
 (defmethod midi-send (destination (timestamp (eql 0)) status channel data1 data2)
   (send-midi-message destination 0 (+ (1- (alexandria:clamp channel 1 16))
 				      (ecase status
@@ -129,7 +131,7 @@
 		     data1 data2))
 
 (defmethod midi-send (destination (timestamp float) status channel data1 data2)
-  (send-midi-message destination (floor (* 1000000000 timestamp))
+  (send-midi-message destination (floor (* 1000000000 (+ (cb:offset *sync-tool*) timestamp)))
 		     (+ (1- (alexandria:clamp channel 1 16))
 			(ecase status
 			  (:note-on #x90)
@@ -175,6 +177,8 @@
   "Prepare a midi-client and required resources."
   (when *midi-client*
     (dispose-resources-of-client *midi-client*))
+  (unless *sync-tool*
+    (setf *sync-tool* (cb:make-sync-tool #'midihost-time "CoreMIDI-Sync Thread")))
   (cffi:with-foreign-objects ((client '+midi-object-ref+)
 			      (in-port '+midi-object-ref+)
 			      (out-port '+midi-object-ref+))
