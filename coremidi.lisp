@@ -175,31 +175,29 @@
  
 (defun coremidi-start ()
   "Prepare a midi-client and required resources."
-  (when *midi-client*
-    (dispose-resources-of-client *midi-client*))
-  (unless *sync-tool*
-    (setf *sync-tool* (cb:make-sync-tool #'midihost-time "CoreMIDI-Sync Thread")))
-  (cffi:with-foreign-objects ((client '+midi-object-ref+)
-			      (in-port '+midi-object-ref+)
-			      (out-port '+midi-object-ref+))
-    (with-cf-strings ((client-name "cl-client")
-		      (in-portname "in-port-on-cl-client")
-		      (out-portname "out-port-on-cl-client"))
-      (create-client client-name (cffi-sys:null-pointer) (cffi-sys:null-pointer) client)
-      (let ((client (cffi:mem-ref client '+midi-object-ref+)))
-	(create-input-port client in-portname
-			   #+ccl(cffi:callback midi-read-proc)
-			   #-ccl(cffi:foreign-symbol-pointer "midi_read_proc")
-			   (cffi-sys:null-pointer)
-			   in-port)
-	(create-output-port client out-portname out-port) 
-	#-ccl (start-handle-thread)
-	(setf *midi-client*
-	      (list :client client
-		    :in-port (cffi:mem-ref in-port '+midi-object-ref+)
-		    :out-port (cffi:mem-ref out-port '+midi-object-ref+)
-		    :connected-sources nil
-		    :in-action-handlers nil
-		    :virtual-endpoints nil))))))
+  (unless *midi-client*
+    (setf *sync-tool* (cb:make-sync-tool #'midihost-time "CoreMIDI-Sync Thread"))
+    (cffi:with-foreign-objects ((client '+midi-object-ref+)
+				(in-port '+midi-object-ref+)
+				(out-port '+midi-object-ref+))
+      (with-cf-strings ((client-name "cl-client")
+			(in-portname "in-port-on-cl-client")
+			(out-portname "out-port-on-cl-client"))
+	(create-client client-name (cffi-sys:null-pointer) (cffi-sys:null-pointer) client)
+	(let ((client (cffi:mem-ref client '+midi-object-ref+)))
+	  (create-input-port client in-portname
+			     #+ccl(cffi:callback midi-read-proc)
+			     #-ccl(cffi:foreign-symbol-pointer "midi_read_proc")
+			     (cffi-sys:null-pointer)
+			     in-port)
+	  (create-output-port client out-portname out-port) 
+	  #-ccl (start-handle-thread)
+	  (setf *midi-client*
+		(list :client client
+		      :in-port (cffi:mem-ref in-port '+midi-object-ref+)
+		      :out-port (cffi:mem-ref out-port '+midi-object-ref+)
+		      :connected-sources nil
+		      :in-action-handlers nil
+		      :virtual-endpoints nil)))))))
 
 

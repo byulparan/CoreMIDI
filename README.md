@@ -16,6 +16,8 @@ please check version of dependency library.
 	so in SBCL,ECL used wrapper objC-library for resolve that problem.
 	That objC library will build automatically when You load CoreMIDI lisp library.
 
+#### package: midi
+
 #### usage:
 - `coremidi-start`  load coremidi resources and initialize it. 
 - `list-of-sources` print all midi sources in the system.
