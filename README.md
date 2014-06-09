@@ -5,6 +5,7 @@
 
 - MacOSX
 - [Quicklisp](http://www.quicklisp.org)
+- [scheduler](http://github.com/byulparan/scheduler)
 - [ClozureCL](http://www.clozure.com/clozurecl.html) or [SBCL](http://www.sbcl.org) or [ECL](http://ecls.sourceforge.net)
 
 #### install note:
