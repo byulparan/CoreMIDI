@@ -109,29 +109,28 @@
 (defun send-midi-message (destination timestamp status data1 data2)
   (cffi:with-foreign-objects ((pkt-buffer :char 1024)
 			      (data :unsigned-char 3))
-    (loop for byte in (list status data1 data2)
+    (loop for byte in (mapcar #'floor (list status data1 data2))
 	  for i from 0
 	  do (setf (cffi:mem-aref data :unsigned-char i) byte))
     (let ((pkt (packet-list-init pkt-buffer)))
       (packet-list-add pkt-buffer 1024 pkt timestamp 3 data)
       (midisend (getf *midi-client* :out-port) destination pkt-buffer))))
 
-(defgeneric midi-send (destination timestamp status channel data1 data2)
-  (:documentation "Send MIDI message to given destination. timestamp == 0 mean it \"now\".
- Otherwise timestamp must based on time of scheduler."))
+(defgeneric midi-send (destination hosttime status channel data1 data2)
+  (:documentation "Send MIDI message to given destination. hosttime == 0 mean it \"now\".
+ Otherwise hosttime is ccl:current-time-in-nanoseconds."))
 
-(defvar *sync-tool* nil)
 
-(defmethod midi-send (destination (timestamp (eql 0)) status channel data1 data2)
-  (send-midi-message destination 0 (+ (1- (alexandria:clamp channel 1 16))
-				      (ecase status
-					(:note-on #x90)
-					(:note-off #x80)
-					(:cc #xB0)))
+(defmethod midi-send (destination (hosttime (eql 0)) status channel data1 data2)
+  (send-midi-message destination hosttime (+ (1- (alexandria:clamp channel 1 16))
+					     (ecase status
+					       (:note-on #x90)
+					       (:note-off #x80)
+					       (:cc #xB0)))
 		     data1 data2))
 
-(defmethod midi-send (destination (timestamp float) status channel data1 data2)
-  (send-midi-message destination (floor (* 1000000000 (+ (cb:offset *sync-tool*) timestamp)))
+(defmethod midi-send (destination hosttime status channel data1 data2)
+  (send-midi-message destination hosttime
 		     (+ (1- (alexandria:clamp channel 1 16))
 			(ecase status
 			  (:note-on #x90)
@@ -176,7 +175,6 @@
 (defun coremidi-start ()
   "Prepare a midi-client and required resources."
   (unless *midi-client*
-    (setf *sync-tool* (cb:make-sync-tool #'midihost-time "CoreMIDI-Sync Thread"))
     (cffi:with-foreign-objects ((client '+midi-object-ref+)
 				(in-port '+midi-object-ref+)
 				(out-port '+midi-object-ref+))
