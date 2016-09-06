@@ -165,15 +165,17 @@
 
 (defmacro with-cf-strings (bindings &body body)
   `(let ,(mapcar (lambda (bind) (list (car bind) nil)) bindings)
-     (unwind-protect (progn
-		       ,@(loop for form in bindings
-			       collect `(setf ,(car form) (cffi:foreign-funcall "CFStringCreateWithCString"
-										:pointer (cffi:foreign-funcall "CFAllocatorGetDefault"
-													       :pointer)
-										:string ,(second form)
-										:int +k-cf-string-encoding-utf-8+
-										:pointer)))
-		       ,@body)
+     (unwind-protect
+	  (progn
+	    ,@(loop for form in bindings collect
+		    `(setf ,(car form) (cffi:foreign-funcall
+					"CFStringCreateWithCString"
+					:pointer (cffi:foreign-funcall "CFAllocatorGetDefault"
+								       :pointer)
+					:string ,(second form)
+					:int +k-cf-string-encoding-utf-8+
+					:pointer)))
+	    ,@body)
        ,@(loop for form in bindings
 	       collect `(cffi:foreign-funcall "CFRelease" :pointer ,(car form))))))
 

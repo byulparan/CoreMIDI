@@ -10,4 +10,5 @@
 	   #:list-of-sources
 	   #:list-of-destinations
 	   #:set-midi-callback
-	   #:midi-send))
+	   #:midi-send
+	   #:midi-send-at))

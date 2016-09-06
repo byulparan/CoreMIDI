@@ -63,17 +63,18 @@
 		(case status
 		  (#xA0 (incf i 3))	 ;polytouch
 		  ((#xC0 #xD0) (incf i 2)) ;program / touch
-		  (#xE0 (progn (alexandria:when-let ((handle (get-handle source :bend))) ;bend
+		  (#xE0 (progn
+			  (alexandria:when-let ((handle (get-handle source :bend))) ;bend
 				 (funcall handle chan (logior (ash (cffi:mem-aref data :unsigned-char (+ i 2)) 7)
 							      (cffi:mem-aref data :unsigned-char (+ i 1)))
 					  0))
 			       (incf i 3)))
-		  (otherwise (progn (alexandria:when-let ((handle (get-handle source (ecase status
-										       (#x80 :note-off)
-										       (#x90 :note-on)
-										       (#xB0 :cc)))))
-				      (funcall handle chan (cffi:mem-aref data :unsigned-char (+ i 1))
-					       (cffi:mem-aref data :unsigned-char (+ i 2))))
+		  (otherwise (progn (alexandria:when-let* 
+					((value (cffi:mem-aref data :unsigned-char (+ i 2)))
+					 (handle (get-handle source (cond ((or (= status #x80) (and (= status #x90) (zerop value))) :note-off)
+									  ((= status #x90) :note-on)
+									  ((= status #xB0) :cc)))))
+				      (funcall handle chan (cffi:mem-aref data :unsigned-char (+ i 1)) value))
 				    (incf i 3))))))
 	  (error (c) (format t "error ~a in coremidi handle thread~%" c)))))))
 
@@ -93,6 +94,7 @@
 	    (cffi-sys:inc-pointer (cffi:foreign-slot-pointer pkt '(:struct +midi-packet+) 'data)
 				  (cffi:foreign-slot-value pkt '(:struct +midi-packet+) 'length))))))
 
+;;;
 (defun set-midi-callback (source status handle)
   "Register handle-function that process incoming MIDI message via input-port."
   (let ((action-handlers (getf *midi-client* :in-action-handlers)))
@@ -105,7 +107,8 @@
 		handle-plist initial-plist)))
       (setf (getf (cdr handle-plist) status) handle))))
 
- 
+
+;;; send-midi-message to destination
 (defun send-midi-message (destination timestamp status data1 data2)
   (cffi:with-foreign-objects ((pkt-buffer :char 1024)
 			      (data :unsigned-char 3))
@@ -116,20 +119,15 @@
       (packet-list-add pkt-buffer 1024 pkt timestamp 3 data)
       (midisend (getf *midi-client* :out-port) destination pkt-buffer))))
 
-(defgeneric midi-send (destination hosttime status channel data1 data2)
-  (:documentation "Send MIDI message to given destination. hosttime == 0 mean it \"now\".
- Otherwise hosttime is ccl:current-time-in-nanoseconds."))
-
-
-(defmethod midi-send (destination (hosttime (eql 0)) status channel data1 data2)
-  (send-midi-message destination hosttime (+ (1- (alexandria:clamp channel 1 16))
-					     (ecase status
-					       (:note-on #x90)
-					       (:note-off #x80)
-					       (:cc #xB0)))
+(defun midi-send (destination status channel data1 data2)
+  (send-midi-message destination 0 (+ (1- (alexandria:clamp channel 1 16))
+				      (ecase status
+					(:note-on #x90)
+					(:note-off #x80)
+					(:cc #xB0)))
 		     data1 data2))
 
-(defmethod midi-send (destination hosttime status channel data1 data2)
+(defun midi-send-at (hosttime destination status channel data1 data2)
   (send-midi-message destination hosttime
 		     (+ (1- (alexandria:clamp channel 1 16))
 			(ecase status
@@ -157,19 +155,22 @@
       (setf threads
 	    (bt:make-thread
 	     (lambda ()
-	       (let ((index 0)
-		     (packets-size (cffi:mem-ref (cffi:foreign-symbol-pointer "PACKETS_SIZE") :int))
+	       (let ((packet (cffi:foreign-symbol-pointer "packet"))
+		     (source (cffi:foreign-symbol-pointer "source"))
 		     (mutex (cffi:foreign-symbol-pointer "mutex"))
-		     (condition-var (cffi:foreign-symbol-pointer "condition_var")))
-		 (cffi:with-foreign-object (packet-ref :pointer)
-		   (cffi:foreign-funcall "pthread_mutex_lock" :pointer mutex)
-		   (loop
-		     (cffi:foreign-funcall "pthread_cond_wait" :pointer condition-var
-							       :pointer mutex)
-		     (loop until (= index (cffi:mem-ref (cffi:foreign-symbol-pointer "current_index") :int))
-			   do (let ((src (cffi:foreign-funcall "get_packet" :pointer packet-ref :int index +midi-object-ref+)))
-				(process-pkt (cffi:mem-ref packet-ref :pointer) src)
-				(setf index (mod (+ index 1) packets-size))))))))
+		     (readtable (cffi:foreign-symbol-pointer "readtable"))
+		     (read-condition-var (cffi:foreign-symbol-pointer "read_condition_var"))
+		     (write-condition-var (cffi:foreign-symbol-pointer "write_condition_var")))
+		 (cffi:foreign-funcall "pthread_mutex_lock" :pointer mutex)
+		 (loop
+		   (cffi:foreign-funcall "pthread_cond_wait" :pointer read-condition-var
+							     :pointer mutex)
+		   (let ((read-p (cffi:mem-ref readtable :int)))
+		     (assert (or (zerop read-p) (= 1 read-p)) nil "MIDI Handle have problem about sync.")
+		     (when (= 1 read-p)
+		       (decf (cffi:mem-ref readtable :int))
+		       (process-pkt (cffi:mem-ref packet :pointer) (cffi:mem-ref source '+midi-object-ref+))))
+		   (cffi:foreign-funcall "pthread_cond_signal" :pointer write-condition-var))))
 	     :name "MIDI-Handler Thread.")))))
  
 (defun coremidi-start ()
