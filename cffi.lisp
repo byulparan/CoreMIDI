@@ -118,6 +118,10 @@
 
 
 ;;; MIDIClient
+(cffi:defcstruct midi-notification
+  (message-id :int)
+  (message-size :unsigned-int))
+
 (cffi:defcfun (create-client "MIDIClientCreate") :int
   "Creates a MIDIClient object."
   (name :pointer)

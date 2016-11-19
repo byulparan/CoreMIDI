@@ -172,7 +172,32 @@
 		       (process-pkt (cffi:mem-ref packet :pointer) (cffi:mem-ref source '+midi-object-ref+))))
 		   (cffi:foreign-funcall "pthread_cond_signal" :pointer write-condition-var))))
 	     :name "MIDI-Handler Thread.")))))
- 
+
+(defvar *midi-notify-handler* nil)
+
+(defun add-midi-notify-callback (handle)
+  (alexandria:appendf *midi-notify-handler* (list handle)))
+
+(defun set-midi-notify-callback (handle)
+  (setf *midi-notify-handler* (list handle)))
+
+(defconstant +setup-changed+ 1)
+(defconstant +object-added+ 2)
+(defconstant +object-removed+ 3)
+(defconstant +property-changed+ 4)
+(defconstant +thru-connections-changed+ 5)
+(defconstant +serial-port-owner-changed+ 6)
+(defconstant +io-error+ 7)
+
+
+(cffi:defcallback midi-notify-proc :void ((message :pointer) (ref-con :pointer))
+  (declare (ignorable message ref-con))
+  (cffi:with-foreign-slots ((message-id message-size) message (:struct midi-notification))
+    (handler-case
+	(dolist (h *midi-notify-handler*)
+	  (funcall h message-id message-size))
+      (error (c) (format t "~a error...while call midi-notify-proc~%" c)))))
+
 (defun coremidi-start ()
   "Prepare a midi-client and required resources."
   (unless *midi-client*
@@ -182,7 +207,7 @@
       (with-cf-strings ((client-name "cl-client")
 			(in-portname "in-port-on-cl-client")
 			(out-portname "out-port-on-cl-client"))
-	(create-client client-name (cffi-sys:null-pointer) (cffi-sys:null-pointer) client)
+	(create-client client-name (cffi:callback midi-notify-proc) (cffi-sys:null-pointer) client)
 	(let ((client (cffi:mem-ref client '+midi-object-ref+)))
 	  (create-input-port client in-portname
 			     #+ccl(cffi:callback midi-read-proc)
