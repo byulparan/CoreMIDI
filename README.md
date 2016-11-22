@@ -26,14 +26,15 @@ please check version of dependency library.
 - `midi-send` send midi message to destination
 
 #### examples:
-	
-	(ql:quickload :coremidi)
+```cl	
+(ql:quickload :coremidi)
 
-	(midi:coremidi-start)
+(midi:coremidi-start)
 
-	(midi:set-midi-callback (midi:get-source 0) :note-on
-			(lambda (chan note vel)
-			  (format t "channel: ~d  notenum: ~d  velocity: ~d~%" chan note vel)))
+(midi:set-midi-callback (midi:get-source 0) :note-on
+		(lambda (chan note vel)
+		  (format t "channel: ~d  notenum: ~d  velocity: ~d~%" chan note vel)))
 
 
-	(midi:midi-send (midi:get-destination 0) (+ (cb:now) 2) :note-on 1 60 100)
+(midi:midi-send (midi:get-destination 0) (+ (cb:now) 2) :note-on 1 60 100)
+```
