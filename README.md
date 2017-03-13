@@ -1,13 +1,15 @@
 # CoreMIDI
 **The wrapper of CoreMIDI Framework for Common Lisp**
 
+### version: 2017.3.14
+
 #### require:
 please check version of dependency library.
 
 
 - MacOSX
 - [Quicklisp](http://www.quicklisp.org)
-- [Scheduler-0.1.5](http://github.com/byulparan/scheduler)
+- [Scheduler](http://github.com/byulparan/scheduler)(above 2017.3.14)
 - [ClozureCL](http://www.clozure.com/clozurecl.html) or [SBCL](http://www.sbcl.org) or [ECL](http://ecls.sourceforge.net)
 
 #### install note:

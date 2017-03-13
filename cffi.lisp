@@ -1,17 +1,19 @@
 (in-package :midi)
 
 #-ccl
-(let* ((dir (su:cat (namestring (asdf/system:system-source-directory :coremidi)) "C/"))
-       (file (su:cat dir "libcoremidi_wrap.dylib")))
-  (unless (probe-file file)
-    (su:run-program (su:cat "make -C " dir) :output t :wait t)) 
-  (push dir cffi:*foreign-library-directories*))
+(handler-case
+    (let* ((dir (concatenate 'string (namestring (asdf/system:system-source-directory :coremidi)) "C/"))
+	   (file (concatenate 'string dir "libcoremidi_wrap.dylib")))
+      (unless (probe-file file)
+	(uiop:run-program (concatenate 'string "make -C " dir) :output t))
+      (cffi:load-foreign-library file))
+  (error ()))
 
-(cffi:define-foreign-library coremidi
-  (:darwin #+ccl (:framework "CoreMIDI")
-	   #-ccl "libcoremidi_wrap.dylib"))
- 
-(cffi:use-foreign-library coremidi)
+#+ccl
+(progn
+  (cffi:define-foreign-library coremidi
+    (:darwin (:framework "CoreMIDI")))
+  (cffi:use-foreign-library coremidi))
 
 ;;; ------------------------------------------------------------------------------
 ;;; CoreMIDI midisend timestamp use AudioGetCurrentHostTime().
@@ -20,7 +22,8 @@
 (cffi:define-foreign-library coreaudio
   (:darwin (:framework "CoreAudio")))
 
-#-ccl (cffi:use-foreign-library coreaudio)
+#-ccl
+(cffi:use-foreign-library coreaudio)
 
 (defun midihost-time ()
   (* 1.0d-9

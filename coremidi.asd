@@ -1,6 +1,6 @@
 (asdf/defsystem:defsystem #:coremidi
-  :depends-on (#:cffi #:alexandria #-ccl #:bordeaux-threads #-ccl #:simple-utils)
-  :version "0.1.0"
+  :depends-on (#:cffi #:alexandria #-ccl #:bordeaux-threads)
+  :version "2017.3.14"
   :components ((:file "package")
 	       (:file "cffi")
 	       (:file "coremidi")))
