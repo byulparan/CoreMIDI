@@ -131,9 +131,10 @@
   (send-midi-message destination hosttime
 		     (+ (1- (alexandria:clamp channel 1 16))
 			(ecase status
-			  (:note-on #x90)
 			  (:note-off #x80)
-			  (:cc #xB0)))
+			  (:note-on #x90)
+			  (:cc #xB0)
+			  (:program-change #xC0)))
 		     data1 data2))
 
 (defun midi-send (destination status channel data1 &optional data2)
