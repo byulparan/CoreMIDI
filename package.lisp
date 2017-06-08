@@ -2,7 +2,7 @@
 (defpackage #:midi
   (:use #:cl)
   (:export #:coremidi-start
-	   #:midiobject-name
+	   #:midiobject-display-name
 	   #:get-source
 	   #:get-destination
 	   #:find-source

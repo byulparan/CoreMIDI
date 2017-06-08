@@ -187,11 +187,11 @@
 	       collect `(cffi:foreign-funcall "CFRelease" :pointer ,(car form))))))
 
 ;;; Property of MIDI-OBJECT
-(defun midiobject-name (midiobject)
+(defun midiobject-display-name (midiobject)
   "Returns the name of a given midiobject."
   (cffi:with-foreign-objects ((cfstring :pointer)
 			      (char :char 1024))
-    (with-cf-strings ((property "name"))
+    (with-cf-strings ((property "displayName"))
       (cffi:foreign-funcall "MIDIObjectGetStringProperty"
 			    :int midiobject
 			    :pointer property

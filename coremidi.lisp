@@ -13,14 +13,14 @@
   (let ((all-sources (all-endpoints :input)))
     (loop for src in all-sources
 	  for i from 0
-	  do (format t "~2d:  ~a~%" i (midiobject-name src)))))
+	  do (format t "~2d:  ~a~%" i (midiobject-display-name src)))))
 
 (defun list-of-destinations ()
   "print the name of destinations in system."
   (let ((all-dest (all-endpoints :output)))
     (loop for dst in all-dest
 	  for i from 0
-	  do (format t "~2d:  ~a~%" i (midiobject-name dst)))))
+	  do (format t "~2d:  ~a~%" i (midiobject-display-name dst)))))
 
 (defun get-source (index)
   "Returns one of the sources in the system."
