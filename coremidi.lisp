@@ -37,11 +37,13 @@
 
 (defun find-source (name)
   "Returns a source which has a same name."
-  (find name (all-endpoints :input) :test #'string= :key #'midiobject-name))
+  (find name (all-endpoints :input)
+	:test #'string= :key #'midiobject-display-name))
 
 (defun find-destination (name)
   "Returns a destination which has a same name."
-  (find name (all-endpoints :output) :test #'string= :key #'midiobject-name))
+  (find name (all-endpoints :output)
+	:test #'string= :key #'midiobject-display-name))
 
 
 (defvar *midi-client* nil
