@@ -119,14 +119,6 @@
       (packet-list-add pkt-buffer 1024 pkt timestamp 3 data)
       (midisend (getf *midi-client* :out-port) destination pkt-buffer))))
 
-(defun midi-send (destination status channel data1 data2)
-  (send-midi-message destination 0 (+ (1- (alexandria:clamp channel 1 16))
-				      (ecase status
-					(:note-on #x90)
-					(:note-off #x80)
-					(:cc #xB0)))
-		     data1 data2))
-
 (defun midi-send-at (hosttime destination status channel data1 data2)
   (send-midi-message destination hosttime
 		     (+ (1- (alexandria:clamp channel 1 16))
@@ -135,6 +127,9 @@
 			  (:note-off #x80)
 			  (:cc #xB0)))
 		     data1 data2))
+
+(defun midi-send (destination status channel data1 data2)
+  (midi-send-at 0 destination status channel data1 data2))
 
 (defun dispose-resources-of-client (client)
   "Disposes resources of given client."
