@@ -112,16 +112,22 @@
 
 ;;; send-midi-message to destination
 (defun send-midi-message (destination timestamp status data1 data2)
-  (cffi:with-foreign-objects ((pkt-buffer :char 1024)
-			      (data :unsigned-char 3))
-    (loop for byte in (mapcar #'floor (list status data1 data2))
-	  for i from 0
-	  do (setf (cffi:mem-aref data :unsigned-char i) byte))
-    (let ((pkt (packet-list-init pkt-buffer)))
-      (packet-list-add pkt-buffer 1024 pkt timestamp 3 data)
-      (midisend (getf *midi-client* :out-port) destination pkt-buffer))))
+  (let (data-length bytes)
+    (if data2
+	(setq data-length 3
+	      bytes (list status data1 data2))
+      (setq data-length 2
+	    bytes (list status data1)))
+    (cffi:with-foreign-objects ((pkt-buffer :char 1024)
+				(data :unsigned-char data-length))
+      (loop for byte in (mapcar #'floor bytes)
+	    for i from 0
+	    do (setf (cffi:mem-aref data :unsigned-char i) byte))
+      (let ((pkt (packet-list-init pkt-buffer)))
+	(packet-list-add pkt-buffer 1024 pkt timestamp data-length data)
+	(midisend (getf *midi-client* :out-port) destination pkt-buffer)))))
 
-(defun midi-send-at (hosttime destination status channel data1 data2)
+(defun midi-send-at (hosttime destination status channel data1 &optional data2)
   (send-midi-message destination hosttime
 		     (+ (1- (alexandria:clamp channel 1 16))
 			(ecase status
@@ -130,8 +136,9 @@
 			  (:cc #xB0)))
 		     data1 data2))
 
-(defun midi-send (destination status channel data1 data2)
-  (midi-send-at 0 destination status channel data1 data2))
+(defun midi-send (destination status channel data1 &optional data2)
+  (apply #'midi-send-at
+    0 destination status channel data1 (when data2 (list data2))))
 
 (defun dispose-resources-of-client (client)
   "Disposes resources of given client."
