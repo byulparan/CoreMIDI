@@ -28,24 +28,35 @@
 (cffi:defctype object-ref :unsigned-int
   "The base class of many CoreMIDI objects.")
 
+(cffi:defctype device-ref :unsigned-int
+  "A MIDI device or external device, containing entities.")
+
+(cffi:defctype entity-ref :unsigned-int
+  "A MIDI entity, owned by a device, containing endpoints.")
 
 
-;;; MIDI Devices
-(cffi:defcfun (number-of-devices "MIDIGetNumberOfDevices") :int
+;; ==========================================================================
+;; MIDI Devices
+;; ==========================================================================
+
+(cffi:defcfun (device-get-entity "MIDIDeviceGetEntity") entity-ref
+  "Returns one of a given device's entities."
+  (device device-ref)
+  (entity-index-0 :int))
+
+(cffi:defcfun (device-get-number-of-entities "MIDIDeviceGetNumberOfEntities")
+    :int
+  "Returns the number of entities in a given device."
+  (device device-ref))
+
+(cffi:defcfun (get-device "MIDIGetDevice") device-ref
+  "Returns one of the devices in the system."
+  (device-index-0 :int))
+
+(cffi:defcfun (get-number-of-devices "MIDIGetNumberOfDevices") :int
   "Returns the number of devices in the system.")
 
-(cffi:defcfun (get-device "MIDIGetDevice") object-ref
-  "Returns one of the devices in the system."
-  (index :int))
 
-(cffi:defcfun (number-of-entities-in-device "MIDIDeviceGetNumberOfEntities") :int
-  "Returns the number of entities in a given device."
-  (device object-ref))
-
-(cffi:defcfun (get-entity-in-device "MIDIDeviceGetEntity") object-ref
-  "Returns one of a given device's entities."
-  (device object-ref)
-  (index :int))
 
 ;;; MIDI Entities
 (cffi:defcfun (get-device-of-entity "MIDIEntityGetDevice") :int
