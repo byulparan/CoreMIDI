@@ -16,6 +16,7 @@
   (cffi:define-foreign-library coremidi (:darwin (:framework "CoreMIDI")))
   (cffi:use-foreign-library coremidi))
 
+;; #### FIXME: elsewhere
 (defun now ()
   (* 1.0d-9 #+ccl(ccl::current-time-in-nanoseconds)
 	    #-ccl(cffi:foreign-funcall "mach_absolute_time" :int64)))
