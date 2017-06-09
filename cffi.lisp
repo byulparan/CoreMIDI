@@ -32,11 +32,6 @@
 
 ;;; ------------------------------------------------------------------------------
 
-;; #### NOTE: this should have been called RESTART, but it's taken by CL.
-(cffi:defcfun (rescan "MIDIRestart") :int
-  "Stop and restarts MIDI I/O, rescanning the hardware.")
-
-
 ;;; MIDIObjectRef
 (cffi:defctype +midi-object-ref+ :unsigned-int
   "Almost data types of CoreMIDI is Derives from MIDIObjectRef.")
