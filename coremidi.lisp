@@ -50,8 +50,10 @@
   "The property-list which have information of current midi-client object.
  That properties are (:client :in-port :out-port :connected-sources :in-action-handlers :virtual-endpoints)")
 
-(defun process-pkt (pkt source)
-  "Process to incoming MIDI message via input-port. It called by midi-read-proc which you supplied when create input-port."
+(defun process-packet (pkt source)
+  "Process PKT coming from SOURCE.
+This function is called by HANDLE-INCOMING-PACKETS, supplied when creating an
+input port."
   (labels ((get-handle (source status)
 	     (let* ((handle-plist (cdr (assoc source (getf *midi-client* :in-action-handlers)))))
 	       (getf handle-plist status))))
@@ -67,10 +69,10 @@
 		  ((#xC0 #xD0) (incf i 2)) ;program / touch
 		  (#xE0 (progn
 			  (alexandria:when-let ((handle (get-handle source :bend))) ;bend
-				 (funcall handle chan (logior (ash (cffi:mem-aref data :unsigned-char (+ i 2)) 7)
-							      (cffi:mem-aref data :unsigned-char (+ i 1)))
-					  0))
-			       (incf i 3)))
+			    (funcall handle chan (logior (ash (cffi:mem-aref data :unsigned-char (+ i 2)) 7)
+							 (cffi:mem-aref data :unsigned-char (+ i 1)))
+				     0))
+			  (incf i 3)))
 		  (otherwise (progn (alexandria:when-let* 
 					((value (cffi:mem-aref data :unsigned-char (+ i 2)))
 					 (handle (get-handle source (cond ((or (= status #x80) (and (= status #x90) (zerop value))) :note-off)
@@ -81,22 +83,26 @@
 	  (error (c) (format t "error ~a in coremidi handle thread~%" c)))))))
 
 
-;;; ccl support foreign-thread-callback. so you can provide this callback function to system, directly.
-;;; in other implementations(SBCL,ECL) need wrapper function which implemented in C.
+;;; CCL has FOREIGN-THREAD-CALLBACK, so we can provide the callback function
+;;; below directly to the system. In other implementations, we need a C
+;;; wrapper.
 #+ccl
-(cffi:defcallback midi-read-proc :void ((packet-list :pointer)
-					(read-proc-ref-con :pointer)
-					(src-conn-ref-con :pointer))
+(cffi:defcallback handle-incoming-packets :void ((pktlist :pointer)
+						 (read-proc-ref-con :pointer)
+						 (src-conn-ref-con :pointer))
   (declare (ignore read-proc-ref-con))
-  (let ((num-packet (cffi:foreign-slot-value packet-list '(:struct +midi-packet-list+) 'num-packets))
-	(pkt (cffi:foreign-slot-pointer packet-list '(:struct +midi-packet-list+) 'packet)))
-    (loop for i from 0 below num-packet do
-      (process-pkt pkt (cffi-sys:pointer-address src-conn-ref-con))
-      (setf pkt
-	    (cffi-sys:inc-pointer (cffi:foreign-slot-pointer pkt '(:struct +midi-packet+) 'data)
-				  (cffi:foreign-slot-value pkt '(:struct +midi-packet+) 'length))))))
+  (let ((packets-number (cffi:foreign-slot-value
+			 pktlist '(:struct +midi-packet-list+) 'num-packets))
+	(packet (cffi:foreign-slot-pointer
+		 pktlist '(:struct +midi-packet-list+) 'packet)))
+    (loop for i from 0 below packets-number do
+      (process-packet packet (cffi-sys:pointer-address src-conn-ref-con))
+      (setf packet (cffi-sys:inc-pointer
+		    (cffi:foreign-slot-pointer packet '(:struct +midi-packet+)
+					       'data)
+		    (cffi:foreign-slot-value packet '(:struct +midi-packet+)
+					     'length))))))
 
-;;;
 (defun set-midi-callback (source status handle)
   "Register handle-function that process incoming MIDI message via input-port."
   (let ((action-handlers (getf *midi-client* :in-action-handlers)))
@@ -152,31 +158,38 @@
     (dispose-endpoint end-pnt))
   (dispose-client (getf client :client)))
 
-  
 #-ccl
-(let ((threads nil))
-  (defun start-handle-thread ()
-    (unless threads
-      (setf threads
+(let (thread)
+  (defun create-incoming-packets-handler-thread ()
+    (unless thread
+      (setf thread
 	    (bt:make-thread
 	     (lambda ()
-	       (let ((packet (cffi:foreign-symbol-pointer "packet"))
-		     (source (cffi:foreign-symbol-pointer "source"))
-		     (mutex (cffi:foreign-symbol-pointer "mutex"))
-		     (readtable (cffi:foreign-symbol-pointer "readtable"))
-		     (read-condition-var (cffi:foreign-symbol-pointer "read_condition_var"))
-		     (write-condition-var (cffi:foreign-symbol-pointer "write_condition_var")))
-		 (cffi:foreign-funcall "pthread_mutex_lock" :pointer mutex)
+	       (let ((lock (cffi:foreign-symbol-pointer "incoming_packets"))
+		     (ready
+		       (cffi:foreign-symbol-pointer "incoming_packet_ready"))
+		     (handled
+		       (cffi:foreign-symbol-pointer "incoming_packet_handled"))
+		     (flag (cffi:foreign-symbol-pointer "incomingPacketFlag"))
+		     (packet (cffi:foreign-symbol-pointer "incomingPacket"))
+		     (endpoint
+		       (cffi:foreign-symbol-pointer "incomingPacketEndpoint")))
+		 (cffi:foreign-funcall "pthread_mutex_lock" :pointer lock)
 		 (loop
-		   (cffi:foreign-funcall "pthread_cond_wait" :pointer read-condition-var
-							     :pointer mutex)
-		   (let ((read-p (cffi:mem-ref readtable :int)))
-		     (assert (or (zerop read-p) (= 1 read-p)) nil "MIDI Handle have problem about sync.")
-		     (when (= 1 read-p)
-		       (decf (cffi:mem-ref readtable :int))
-		       (process-pkt (cffi:mem-ref packet :pointer) (cffi:mem-ref source '+midi-object-ref+))))
-		   (cffi:foreign-funcall "pthread_cond_signal" :pointer write-condition-var))))
-	     :name "MIDI-Handler Thread.")))))
+		   (cffi:foreign-funcall "pthread_cond_wait"
+		     :pointer ready :pointer lock)
+		   (let ((flag-value (cffi:mem-ref flag :int)))
+		     (assert (or (zerop flag-value) (= 1 flag-value))
+			     nil
+			     "Incoming packets handler thread out of sync.")
+		     (when (= 1 flag-value)
+		       (decf (cffi:mem-ref flag :int))
+		       (process-packet
+			(cffi:mem-ref packet :pointer)
+			(cffi:mem-ref endpoint '+midi-object-ref+))))
+		   (cffi:foreign-funcall "pthread_cond_signal"
+		     :pointer handled))))
+	     :name "Incoming packets handler")))))
 
 (defvar *midi-notify-handler* nil)
 
@@ -212,15 +225,19 @@
       (with-cf-strings ((client-name "cl-client")
 			(in-portname "in-port-on-cl-client")
 			(out-portname "out-port-on-cl-client"))
-	(create-client client-name (cffi:callback midi-notify-proc) (cffi-sys:null-pointer) client)
+	(create-client client-name
+		       (cffi:callback midi-notify-proc)
+		       (cffi-sys:null-pointer)
+		       client)
 	(let ((client (cffi:mem-ref client '+midi-object-ref+)))
 	  (create-input-port client in-portname
-			     #+ccl(cffi:callback midi-read-proc)
-			     #-ccl(cffi:foreign-symbol-pointer "midi_read_proc")
+			     #+ccl(cffi:callback handle-incoming-packets)
+			     #-ccl(cffi:foreign-symbol-pointer
+				   "handleIncomingPackets")
 			     (cffi-sys:null-pointer)
 			     in-port)
-	  (create-output-port client out-portname out-port) 
-	  #-ccl (start-handle-thread)
+	  (create-output-port client out-portname out-port)
+	  #-ccl (create-incoming-packets-handler-thread)
 	  (setf *midi-client*
 		(list :client client
 		      :in-port (cffi:mem-ref in-port '+midi-object-ref+)
@@ -228,5 +245,3 @@
 		      :connected-sources nil
 		      :in-action-handlers nil
 		      :virtual-endpoints nil)))))))
-
-
