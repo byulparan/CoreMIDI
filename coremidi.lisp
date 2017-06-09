@@ -216,7 +216,7 @@ input port."
 	  (funcall h message-id message-size))
       (error (c) (format t "~a error...while call midi-notify-proc~%" c)))))
 
-(defun coremidi-start ()
+(defun initialize ()
   "Prepare a midi-client and required resources."
   (unless *midi-client*
     (cffi:with-foreign-objects ((client '+midi-object-ref+)
