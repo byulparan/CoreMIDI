@@ -9,7 +9,7 @@
       (unless (probe-file file)
 	(uiop:run-program (concatenate 'string "make -C " dir) :output t))
       (cffi:load-foreign-library file))
-  (error ()))
+  (error ())) ;; #### FIXME: WTF?
 
 #+ccl
 (progn
