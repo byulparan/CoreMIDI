@@ -3,8 +3,8 @@
 (defun all-endpoints (direction)
   (multiple-value-bind (number-f get-f)
       (ecase direction
-	(:input (values #'number-of-sources #'get-source))
-	(:output (values #'number-of-destinations #'get-destination)))
+	(:input (values #'get-number-of-sources #'get-source))
+	(:output (values #'get-number-of-destinations #'get-destination)))
     (loop for i from 0 below (funcall number-f)
 	  collect (funcall get-f i))))
 
@@ -21,18 +21,6 @@
     (loop for dst in all-dest
 	  for i from 0
 	  do (format t "~2d:  ~a~%" i (midiobject-display-name dst)))))
-
-(defun get-source (index)
-  "Returns one of the sources in the system."
-  (let ((src (midigetsource index)))
-    (assert (not (zerop src)) (index) "out of index! index: ~a max-index: ~a" index (1- (number-of-sources)))
-    src))
-
-(defun get-destination (index)
-  "Returns one of the destinations in the system."
-  (let ((dst (midigetdestination index)))
-    (assert (not (zerop dst)) (index) "out of index! index: ~a max-index: ~a" index (1- (number-of-destinations)))
-    dst))
 
 
 (defun find-source (name)
@@ -155,7 +143,7 @@ input port."
     (dispose-port in-port))
   (dispose-port (getf client :out-port))
   (dolist (end-pnt (getf client :virtual-endpoints))
-    (dispose-endpoint end-pnt))
+    (endpoint-dispose end-pnt))
   (dispose-client (getf client :client)))
 
 #-ccl

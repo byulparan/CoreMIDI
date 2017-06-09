@@ -37,6 +37,9 @@
 (cffi:defctype endpoint-ref :unsigned-int
   "A MIDI source or destination, owned by an entity.")
 
+(cffi:defctype client-ref :unsigned-int
+  "An object maintaining per-client state.")
+
 
 ;; ==========================================================================
 ;; MIDI Devices
@@ -92,45 +95,46 @@
   (source-index-0 :int))
 
 
+;; ==========================================================================
 ;;; MIDI Endpoints
-;;; input-Endpoint is "Source" and output-Endpoint is "Destination"
+;; ==========================================================================
 
-(cffi:defcfun (number-of-destinations "MIDIGetNumberOfDestinations") :int
-  "Returns the number of destinations in the system.")
-
-(cffi:defcfun (number-of-sources "MIDIGetNumberOfSources") :int
-  "Returns the number of sources in the system.")
-
-(cffi:defcfun "MIDIGetDestination" object-ref
-  "Returns one of the destinations in the system."
-  (index :int))
-
-(cffi:defcfun "MIDIGetSource" object-ref
-  "Returns one of the sources in the system."
-  (index :int))
-
-(cffi:defcfun (get-entity-of-endpoint "MIDIEndpointGetEntity") :int
-  "Returns an endpoint's entity."
-  (endpoint object-ref)
-  (entity-ref :pointer))
-
-(cffi:defcfun (create-destination "MIDIDestinationCreate") :int
+(cffi:defcfun (destination-create "MIDIDestinationCreate") :int
   "Creates a virtual destination in client."
-  (client object-ref)
+  (client client-ref)
   (name :pointer)
   (read-proc :pointer)
   (ref-con :pointer)
   (out-dest :pointer))
 
-(cffi:defcfun (create-source "MIDISourceCreate") :int
+(cffi:defcfun (endpoint-dispose "MIDIEndpointDispose") :int
+  "Disposes a virtual source or destination your client created."
+  (endpt endpoint-ref))
+
+(cffi:defcfun (endpoint-get-entity "MIDIEndpointGetEntity") :int
+  "Returns an endpoint's entity."
+  (in-endpoint endpoint-ref)
+  (out-entity :pointer))
+
+(cffi:defcfun (get-destination "MIDIGetDestination") endpoint-ref
+  "Returns one of the destinations in the system."
+  (dest-index-0 :int))
+
+(cffi:defcfun (get-number-of-destinations "MIDIGetNumberOfDestinations") :int
+  "Returns the number of destinations in the system.")
+
+(cffi:defcfun (get-number-of-sources "MIDIGetNumberOfSources") :int
+  "Returns the number of sources in the system.")
+
+(cffi:defcfun (get-source "MIDIGetSource") endpoint-ref
+  "Returns one of the sources in the system."
+  (source-index-0 :int))
+
+(cffi:defcfun (source-create "MIDISourceCreate") :int
   "Creates a virtual source in a client."
-  (client object-ref)
+  (client client-ref)
   (name :pointer)
   (out-src :pointer))
-
-(cffi:defcfun (dispose-endpoint "MIDIEndpointDispose") :int
-  "Disposes a virtual source or destination your client created."
-  (endpt object-ref))
 
 
 
