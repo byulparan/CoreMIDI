@@ -30,6 +30,12 @@
     ;; MIDI Clients:
     #:client-create
     #:client-dispose
+    ;; MIDI Ports:
+    #:input-port-create
+    #:output-port-create
+    #:port-connect-source
+    #:port-disconnect-source
+    #:port-dispose
 
     #:initialize
     #:midi-restart

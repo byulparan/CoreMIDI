@@ -154,36 +154,41 @@
   (client client-ref))
 
 
-;;; MIDIPorts
-(cffi:defcfun (create-input-port "MIDIInputPortCreate") :int
-  "Creates an input port through which the client may receive incoming MIDI messages from any MIDI source."
-  (client object-ref)
-  (portname :pointer)
+;; ==========================================================================
+;; MIDI Ports
+;; ==========================================================================
+
+(cffi:defcfun (input-port-create "MIDIInputPortCreate") :int
+  "Creates an input port.
+The client may receive incoming MIDI messages from any MIDI source."
+  (client client-ref)
+  (port-name :pointer)
   (read-proc :pointer)
   (ref-con :pointer)
-  (port-ref :pointer))
+  (in-port :pointer))
 
+(cffi:defcfun (output-port-create "MIDIOutputPortCreate") :int
+  "Creates an output port.
+The client may send outgoing MIDI messages to any MIDI destination."
+  (client client-ref)
+  (port-name :pointer)
+  (out-port :pointer))
 
-(cffi:defcfun (create-output-port "MIDIOutputPortCreate") :int
-  "Creates an output port through which the client may send outgoing MIDI messages to any MIDI destination."
-  (client object-ref)
-  (portname :pointer)
-  (port-ref :pointer))
-
-(cffi:defcfun (connect-source "MIDIPortConnectSource") :int
+(cffi:defcfun (port-connect-source "MIDIPortConnectSource") :int
   "Establishes a connection from a source to a client's input port."
-  (port object-ref)
-  (source object-ref)
-  (ref-con :pointer))
+  (port port-ref)
+  (source endpoint-ref)
+  (conn-ref-con :pointer))
 
-(cffi:defcfun (disconnect-source "MIDIPortDisconnectSource") :int
+(cffi:defcfun (port-disconnect-source "MIDIPortDisconnectSource") :int
   "Closes a previously-established source-to-input port connection."
-  (port object-ref)
-  (source object-ref))
+  (port port-ref)
+  (source endpoint-ref))
 
-(cffi:defcfun (dispose-port "MIDIPortDispose") :int
+(cffi:defcfun (port-dispose "MIDIPortDispose") :int
   "Disposes a MIDIPort object."
-  (port object-ref))
+  (port port-ref))
+
 
 ;;; with-cfstring
 (defconstant +k-cf-string-encoding-utf-8+ #x08000100)

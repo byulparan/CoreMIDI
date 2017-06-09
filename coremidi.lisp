@@ -96,7 +96,7 @@ input port."
   (let ((action-handlers (getf *midi-client* :in-action-handlers)))
     (let ((handle-plist (assoc source action-handlers)))
       (unless handle-plist
-	(connect-source (getf *midi-client* :in-port) source (cffi-sys:make-pointer source))
+	(port-connect-source (getf *midi-client* :in-port) source (cffi-sys:make-pointer source))
 	(pushnew source (getf *midi-client* :connected-sources))
 	(let ((initial-plist (cons source (list :note-on nil :note-off nil :cc nil :bend nil))))
 	  (setf (getf *midi-client* :in-action-handlers) (cons initial-plist action-handlers)
@@ -140,9 +140,9 @@ input port."
   "Disposes resources of given client."
   (let ((in-port (getf client :in-port)))
     (dolist (src (getf client :connected-sources))
-      (disconnect-source in-port src))
-    (dispose-port in-port))
-  (dispose-port (getf client :out-port))
+      (port-disconnect-source in-port src))
+    (port-dispose in-port))
+  (port-dispose (getf client :out-port))
   (dolist (end-pnt (getf client :virtual-endpoints))
     (endpoint-dispose end-pnt))
   (client-dispose (getf client :client)))
@@ -219,13 +219,13 @@ input port."
 		       (cffi-sys:null-pointer)
 		       client)
 	(let ((client (cffi:mem-ref client 'object-ref)))
-	  (create-input-port client in-portname
+	  (input-port-create client in-portname
 			     #+ccl(cffi:callback handle-incoming-packets)
 			     #-ccl(cffi:foreign-symbol-pointer
 				   "handleIncomingPackets")
 			     (cffi-sys:null-pointer)
 			     in-port)
-	  (create-output-port client out-portname out-port)
+	  (output-port-create client out-portname out-port)
 	  #-ccl (create-incoming-packets-handler-thread)
 	  (setf *midi-client*
 		(list :client client
