@@ -186,7 +186,7 @@ input port."
 		       (decf (cffi:mem-ref flag :int))
 		       (process-packet
 			(cffi:mem-ref packet :pointer)
-			(cffi:mem-ref endpoint '+midi-object-ref+))))
+			(cffi:mem-ref endpoint 'object-ref))))
 		   (cffi:foreign-funcall "pthread_cond_signal"
 		     :pointer handled))))
 	     :name "Incoming packets handler")))))
@@ -219,9 +219,9 @@ input port."
 (defun initialize ()
   "Prepare a midi-client and required resources."
   (unless *midi-client*
-    (cffi:with-foreign-objects ((client '+midi-object-ref+)
-				(in-port '+midi-object-ref+)
-				(out-port '+midi-object-ref+))
+    (cffi:with-foreign-objects ((client 'object-ref)
+				(in-port 'object-ref)
+				(out-port 'object-ref))
       (with-cf-strings ((client-name "cl-client")
 			(in-portname "in-port-on-cl-client")
 			(out-portname "out-port-on-cl-client"))
@@ -229,7 +229,7 @@ input port."
 		       (cffi:callback midi-notify-proc)
 		       (cffi-sys:null-pointer)
 		       client)
-	(let ((client (cffi:mem-ref client '+midi-object-ref+)))
+	(let ((client (cffi:mem-ref client 'object-ref)))
 	  (create-input-port client in-portname
 			     #+ccl(cffi:callback handle-incoming-packets)
 			     #-ccl(cffi:foreign-symbol-pointer
@@ -240,8 +240,8 @@ input port."
 	  #-ccl (create-incoming-packets-handler-thread)
 	  (setf *midi-client*
 		(list :client client
-		      :in-port (cffi:mem-ref in-port '+midi-object-ref+)
-		      :out-port (cffi:mem-ref out-port '+midi-object-ref+)
+		      :in-port (cffi:mem-ref in-port 'object-ref)
+		      :out-port (cffi:mem-ref out-port 'object-ref)
 		      :connected-sources nil
 		      :in-action-handlers nil
 		      :virtual-endpoints nil)))))))

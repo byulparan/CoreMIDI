@@ -21,50 +21,54 @@
 	    #-ccl(cffi:foreign-funcall "mach_absolute_time" :int64)))
 
 
-;;; MIDIObjectRef
-(cffi:defctype +midi-object-ref+ :unsigned-int
-  "Almost data types of CoreMIDI is Derives from MIDIObjectRef.")
+;; ==========================================================================
+;; Data Types
+;; ==========================================================================
+
+(cffi:defctype object-ref :unsigned-int
+  "The MIDIObjectRef type.")
+
 
 
 ;;; MIDI Devices
 (cffi:defcfun (number-of-devices "MIDIGetNumberOfDevices") :int
   "Returns the number of devices in the system.")
 
-(cffi:defcfun (get-device "MIDIGetDevice") +midi-object-ref+
+(cffi:defcfun (get-device "MIDIGetDevice") object-ref
   "Returns one of the devices in the system."
   (index :int))
 
 (cffi:defcfun (number-of-entities-in-device "MIDIDeviceGetNumberOfEntities") :int
   "Returns the number of entities in a given device."
-  (device +midi-object-ref+))
+  (device object-ref))
 
-(cffi:defcfun (get-entity-in-device "MIDIDeviceGetEntity") +midi-object-ref+
+(cffi:defcfun (get-entity-in-device "MIDIDeviceGetEntity") object-ref
   "Returns one of a given device's entities."
-  (device +midi-object-ref+)
+  (device object-ref)
   (index :int))
 
 ;;; MIDI Entities
 (cffi:defcfun (get-device-of-entity "MIDIEntityGetDevice") :int
   "Returns an entity's device."
-  (entity +midi-object-ref+)
+  (entity object-ref)
   (device-ref :pointer))
 
 (cffi:defcfun (number-of-destinations-in-entity "MIDIEntityGetNumberOfDestinations") :int
   "Returns the number of destinations in a given entity."
-  (entity +midi-object-ref+))
+  (entity object-ref))
 
 (cffi:defcfun (number-of-sources-in-entity "MIDIEntityGetNumberOfSources") :int
   "Returns the number of sources in a given entity."
-  (entity +midi-object-ref+))
+  (entity object-ref))
 
-(cffi:defcfun (get-source-in-entity "MIDIEntityGetSource") +midi-object-ref+
+(cffi:defcfun (get-source-in-entity "MIDIEntityGetSource") object-ref
   "Returns one of a given entity's sources"
-  (entity +midi-object-ref+)
+  (entity object-ref)
   (index :int))
 
-(cffi:defcfun (get-destination-in-entity "MIDIEntityGetDestination") +midi-object-ref+
+(cffi:defcfun (get-destination-in-entity "MIDIEntityGetDestination") object-ref
   "Returns one of a given entity's destinations."
-  (entity +midi-object-ref+)
+  (entity object-ref)
   (index :int))
 
 ;;; MIDI Endpoints
@@ -76,22 +80,22 @@
 (cffi:defcfun (number-of-sources "MIDIGetNumberOfSources") :int
   "Returns the number of sources in the system.")
 
-(cffi:defcfun "MIDIGetDestination" +midi-object-ref+
+(cffi:defcfun "MIDIGetDestination" object-ref
   "Returns one of the destinations in the system."
   (index :int))
 
-(cffi:defcfun "MIDIGetSource" +midi-object-ref+
+(cffi:defcfun "MIDIGetSource" object-ref
   "Returns one of the sources in the system."
   (index :int))
 
 (cffi:defcfun (get-entity-of-endpoint "MIDIEndpointGetEntity") :int
   "Returns an endpoint's entity."
-  (endpoint +midi-object-ref+)
+  (endpoint object-ref)
   (entity-ref :pointer))
 
 (cffi:defcfun (create-destination "MIDIDestinationCreate") :int
   "Creates a virtual destination in client."
-  (client +midi-object-ref+)
+  (client object-ref)
   (name :pointer)
   (read-proc :pointer)
   (ref-con :pointer)
@@ -99,13 +103,13 @@
 
 (cffi:defcfun (create-source "MIDISourceCreate") :int
   "Creates a virtual source in a client."
-  (client +midi-object-ref+)
+  (client object-ref)
   (name :pointer)
   (out-src :pointer))
 
 (cffi:defcfun (dispose-endpoint "MIDIEndpointDispose") :int
   "Disposes a virtual source or destination your client created."
-  (endpt +midi-object-ref+))
+  (endpt object-ref))
 
 
 
@@ -123,12 +127,12 @@
 
 (cffi:defcfun (dispose-client "MIDIClientDispose") :int
   "Disposes a MIDIClient object."
-  (client +midi-object-ref+))
+  (client object-ref))
 
 ;;; MIDIPorts
 (cffi:defcfun (create-input-port "MIDIInputPortCreate") :int
   "Creates an input port through which the client may receive incoming MIDI messages from any MIDI source."
-  (client +midi-object-ref+)
+  (client object-ref)
   (portname :pointer)
   (read-proc :pointer)
   (ref-con :pointer)
@@ -137,24 +141,24 @@
 
 (cffi:defcfun (create-output-port "MIDIOutputPortCreate") :int
   "Creates an output port through which the client may send outgoing MIDI messages to any MIDI destination."
-  (client +midi-object-ref+)
+  (client object-ref)
   (portname :pointer)
   (port-ref :pointer))
 
 (cffi:defcfun (connect-source "MIDIPortConnectSource") :int
   "Establishes a connection from a source to a client's input port."
-  (port +midi-object-ref+)
-  (source +midi-object-ref+)
+  (port object-ref)
+  (source object-ref)
   (ref-con :pointer))
 
 (cffi:defcfun (disconnect-source "MIDIPortDisconnectSource") :int
   "Closes a previously-established source-to-input port connection."
-  (port +midi-object-ref+)
-  (source +midi-object-ref+))
+  (port object-ref)
+  (source object-ref))
 
 (cffi:defcfun (dispose-port "MIDIPortDispose") :int
   "Disposes a MIDIPort object."
-  (port +midi-object-ref+))
+  (port object-ref))
 
 ;;; with-cfstring
 (defconstant +k-cf-string-encoding-utf-8+ #x08000100)
@@ -196,7 +200,6 @@
 
 
 ;;; MIDIPacket
-;(cffi:defctype +midi-time-stamp+ :unsigned-long)
 
 (cffi:defcstruct +midi-packet+
   (time-stamp-high :unsigned-int)
@@ -225,13 +228,13 @@
 ;;; MIDI I/O
 (cffi:defcfun "MIDISend" :int
   "Sends MIDI to a destination."
-  (port +midi-object-ref+)
-  (destination +midi-object-ref+)
+  (port object-ref)
+  (destination object-ref)
   (pktlist :pointer))
 
 (cffi:defcfun (midi-received "MIDIReceived") :int
   "Distributes incoming MIDI from a source to the client input ports which are connected to that source."
-  (src +midi-object-ref+)
+  (src object-ref)
   (mktlist :pointer))
 
 (cffi:defcfun (midi-restart "MIDIRestart") :int
