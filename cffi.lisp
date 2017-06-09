@@ -41,6 +41,9 @@
 (cffi:defctype client-ref :unsigned-int
   "An object maintaining per-client state.")
 
+(cffi:defctype port-ref :unsigned-int
+  "A MIDI connection port owned by a client.")
+
 
 ;; ==========================================================================
 ;; MIDI Devices
