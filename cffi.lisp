@@ -138,22 +138,21 @@
   (out-src :pointer))
 
 
+;; ==========================================================================
+;; MIDI Clients
+;; ==========================================================================
 
-;;; MIDIClient
-(cffi:defcstruct midi-notification
-  (message-id :int)
-  (message-size :unsigned-int))
-
-(cffi:defcfun (create-client "MIDIClientCreate") :int
+(cffi:defcfun (client-create "MIDIClientCreate") :int
   "Creates a MIDIClient object."
   (name :pointer)
   (notify-proc :pointer)
   (notify-ref-con :pointer)
-  (client-ref :pointer))
+  (out-client :pointer))
 
-(cffi:defcfun (dispose-client "MIDIClientDispose") :int
+(cffi:defcfun (client-dispose "MIDIClientDispose") :int
   "Disposes a MIDIClient object."
-  (client object-ref))
+  (client client-ref))
+
 
 ;;; MIDIPorts
 (cffi:defcfun (create-input-port "MIDIInputPortCreate") :int
@@ -265,3 +264,9 @@
 
 (cffi:defcfun (midi-restart "MIDIRestart") :int
   "Stops and restarts MIDI I/O. This is useful for forcing CoreMIDI to ask its dirvers to rescan for hardware.")
+
+
+(cffi:defcstruct midi-notification
+  (message-id :int)
+  (message-size :unsigned-int))
+

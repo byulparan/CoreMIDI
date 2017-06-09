@@ -27,12 +27,13 @@
     #:get-number-of-sources
     #:get-source
     #:source-create
+    ;; MIDI Clients:
+    #:client-create
+    #:client-dispose
 
     #:initialize
     #:midi-restart
     #:midiobject-display-name
-    #:get-source
-    #:get-destination
     #:find-source
     #:find-destination
     #:list-of-sources

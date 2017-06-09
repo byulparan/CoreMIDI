@@ -135,6 +135,7 @@ input port."
   (apply #'midi-send-at
     0 destination status channel data1 (when data2 (list data2))))
 
+;; #### NOTE: is this needed? Doesn't MIDIClientDispose perform this cleanup?
 (defun dispose-resources-of-client (client)
   "Disposes resources of given client."
   (let ((in-port (getf client :in-port)))
@@ -144,7 +145,7 @@ input port."
   (dispose-port (getf client :out-port))
   (dolist (end-pnt (getf client :virtual-endpoints))
     (endpoint-dispose end-pnt))
-  (dispose-client (getf client :client)))
+  (client-dispose (getf client :client)))
 
 #-ccl
 (let (thread)
@@ -213,7 +214,7 @@ input port."
       (with-cf-strings ((client-name "cl-client")
 			(in-portname "in-port-on-cl-client")
 			(out-portname "out-port-on-cl-client"))
-	(create-client client-name
+	(client-create client-name
 		       (cffi:callback midi-notify-proc)
 		       (cffi-sys:null-pointer)
 		       client)
