@@ -26,7 +26,7 @@
 ;; ==========================================================================
 
 (cffi:defctype object-ref :unsigned-int
-  "The MIDIObjectRef type.")
+  "The base class of many CoreMIDI objects.")
 
 
 
