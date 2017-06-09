@@ -34,6 +34,9 @@
 (cffi:defctype entity-ref :unsigned-int
   "A MIDI entity, owned by a device, containing endpoints.")
 
+(cffi:defctype endpoint-ref :unsigned-int
+  "A MIDI source or destination, owned by an entity.")
+
 
 ;; ==========================================================================
 ;; MIDI Devices
@@ -57,30 +60,37 @@
   "Returns the number of devices in the system.")
 
 
+;; ==========================================================================
+;; MIDI Entities
+;; ==========================================================================
 
-;;; MIDI Entities
-(cffi:defcfun (get-device-of-entity "MIDIEntityGetDevice") :int
-  "Returns an entity's device."
-  (entity object-ref)
-  (device-ref :pointer))
-
-(cffi:defcfun (number-of-destinations-in-entity "MIDIEntityGetNumberOfDestinations") :int
-  "Returns the number of destinations in a given entity."
-  (entity object-ref))
-
-(cffi:defcfun (number-of-sources-in-entity "MIDIEntityGetNumberOfSources") :int
-  "Returns the number of sources in a given entity."
-  (entity object-ref))
-
-(cffi:defcfun (get-source-in-entity "MIDIEntityGetSource") object-ref
-  "Returns one of a given entity's sources"
-  (entity object-ref)
-  (index :int))
-
-(cffi:defcfun (get-destination-in-entity "MIDIEntityGetDestination") object-ref
+(cffi:defcfun (entity-get-destination "MIDIEntityGetDestination") endpoint-ref
   "Returns one of a given entity's destinations."
-  (entity object-ref)
-  (index :int))
+  (entity entity-ref)
+  (dest-index-0 :int))
+
+(cffi:defcfun (entity-get-device "MIDIEntityGetDevice") :int
+  "Returns an entity's device."
+  (in-entity entity-ref)
+  (out-device :pointer))
+
+(cffi:defcfun
+    (entity-get-number-of-destinations "MIDIEntityGetNumberOfDestinations")
+    :int
+  "Returns the number of destinations in a given entity."
+  (entity entity-ref))
+
+(cffi:defcfun
+    (entity-get-number-of-sources "MIDIEntityGetNumberOfSources")
+    :int
+  "Returns the number of sources in a given entity."
+  (entity entity-ref))
+
+(cffi:defcfun (entity-get-source "MIDIEntityGetSource") endpoint-ref
+  "Returns one of a given entity's sources"
+  (entity entity-ref)
+  (source-index-0 :int))
+
 
 ;;; MIDI Endpoints
 ;;; input-Endpoint is "Source" and output-Endpoint is "Destination"
