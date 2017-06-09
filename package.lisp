@@ -1,7 +1,7 @@
-
 (defpackage #:midi
   (:use #:cl)
   (:export #:coremidi-start
+	   #:rescan
 	   #:midiobject-display-name
 	   #:get-source
 	   #:get-destination
