@@ -1,5 +1,4 @@
 #import <CoreMIDI/CoreMIDI.h>
-#import <CoreAudio/CoreAudio.h>
 
 #import <pthread.h>
 

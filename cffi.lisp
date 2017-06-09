@@ -13,26 +13,13 @@
 
 #+ccl
 (progn
-  (cffi:define-foreign-library coremidi
-    (:darwin (:framework "CoreMIDI")))
+  (cffi:define-foreign-library coremidi (:darwin (:framework "CoreMIDI")))
   (cffi:use-foreign-library coremidi))
 
-;;; ------------------------------------------------------------------------------
-;;; CoreMIDI midisend timestamp use AudioGetCurrentHostTime().
-;;; CCL has #'ccl::current-time-in-nanoseconds (== AudioGetCurrentHostTime())
-#-ccl
-(cffi:define-foreign-library coreaudio
-  (:darwin (:framework "CoreAudio")))
+(defun now ()
+  (* 1.0d-9 #+ccl(ccl::current-time-in-nanoseconds)
+	    #-ccl(cffi:foreign-funcall "mach_absolute_time" :int64)))
 
-#-ccl
-(cffi:use-foreign-library coreaudio)
-
-(defun midihost-time ()
-  (* 1.0d-9
-     #+ccl(ccl::current-time-in-nanoseconds)
-     #-ccl(cffi:foreign-funcall "AudioGetCurrentHostTime" :int64)))
-
-;;; ------------------------------------------------------------------------------
 
 ;;; MIDIObjectRef
 (cffi:defctype +midi-object-ref+ :unsigned-int
