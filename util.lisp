@@ -27,6 +27,7 @@ Each binding looks like (VAR STRING). every VAR will be bound to a newly
 created CoreFoundation string initialized from plain STRING. Those strings
 will be released afterwards."
   `(let ,(mapcar #'car bindings)
+     ;; #### FIXME: we can do better in terms of error handling.
      (unwind-protect
 	  (progn
 	    (setq ,@(loop :for form :in bindings
