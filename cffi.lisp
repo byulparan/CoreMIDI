@@ -225,19 +225,32 @@ packet in memory, for packets that are part of a MIDIPacketList array."
 ;; MIDI I/O
 ;; ==========================================================================
 
-(cffi:defcfun "MIDISend" :int
-  "Sends MIDI to a destination."
-  (port object-ref)
-  (destination object-ref)
+(cffi:defcfun (flush-output "MIDIFlushOutput") :int
+  "Unschedules previously-sent packets."
+  (dest endpoint-ref))
+
+(cffi:defcfun (received "MIDIReceived") :int
+  "Distributes incoming MIDI from a source.
+MIDI is distributed to the client input ports which are connected to that
+source."
+  (src endpoint-ref)
   (pktlist :pointer))
 
-(cffi:defcfun (midi-received "MIDIReceived") :int
-  "Distributes incoming MIDI from a source to the client input ports which are connected to that source."
-  (src object-ref)
-  (mktlist :pointer))
+;; #### NOTE: exception to the naming scheme, to avoid colliding with Common
+;; Lisp's RESTART.
+(cffi:defcfun (rescan "MIDIRestart") :int
+  "Stops and restarts MIDI I/O.")
 
-(cffi:defcfun (midi-restart "MIDIRestart") :int
-  "Stops and restarts MIDI I/O. This is useful for forcing CoreMIDI to ask its dirvers to rescan for hardware.")
+(cffi:defcfun (send "MIDISend") :int
+  "Sends MIDI to a destination."
+  (port port-ref)
+  (destination endpoint-ref)
+  (pktlist :pointer))
+
+(cffi:defcfun (send-sysex "MIDISendSysex") :int
+  "Sends a single system-exclusive event, asynchronously."
+  (request :pointer))
+
 
 
 ;;; with-cfstring

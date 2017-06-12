@@ -40,9 +40,14 @@
     #:packet-list-add
     #:packet-list-init
     #:packet-next
+    ;; MIDI I/O:
+    #:flush-output
+    #:received
+    #:rescan
+    #:send
+    #:send-sysex
 
     #:initialize
-    #:midi-restart
     #:midiobject-display-name
     #:find-source
     #:find-destination

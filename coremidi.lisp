@@ -119,7 +119,7 @@ input port."
 	    do (setf (cffi:mem-aref data :unsigned-char i) byte))
       (let ((pkt (packet-list-init pkt-buffer)))
 	(packet-list-add pkt-buffer 1024 pkt timestamp data-length data)
-	(midisend (getf *midi-client* :out-port) destination pkt-buffer)))))
+	(send (getf *midi-client* :out-port) destination pkt-buffer)))))
 
 (defun midi-send-at (hosttime destination status channel data1 &optional data2)
   (send-midi-message destination hosttime
