@@ -46,7 +46,7 @@ input port."
 	     (let* ((handle-plist (cdr (assoc source (getf *midi-client* :in-action-handlers)))))
 	       (getf handle-plist status))))
     (let ((i 0))
-      (cffi:with-foreign-slots ((length data) pkt (:struct +midi-packet+))
+      (cffi:with-foreign-slots ((length data) pkt (:struct packet))
 	(handler-case
 	    (loop while (> length i) do
 	      (let* ((head (cffi:mem-aref data :unsigned-char i))
@@ -80,15 +80,15 @@ input port."
 						 (src-conn-ref-con :pointer))
   (declare (ignore read-proc-ref-con))
   (let ((packets-number (cffi:foreign-slot-value
-			 pktlist '(:struct +midi-packet-list+) 'num-packets))
+			 pktlist '(:struct packet-list) 'num-packets))
 	(packet (cffi:foreign-slot-pointer
-		 pktlist '(:struct +midi-packet-list+) 'packet)))
+		 pktlist '(:struct packet-list) 'packet)))
     (loop for i from 0 below packets-number do
       (process-packet packet (cffi-sys:pointer-address src-conn-ref-con))
       (setf packet (cffi-sys:inc-pointer
-		    (cffi:foreign-slot-pointer packet '(:struct +midi-packet+)
+		    (cffi:foreign-slot-pointer packet '(:struct packet)
 					       'data)
-		    (cffi:foreign-slot-value packet '(:struct +midi-packet+)
+		    (cffi:foreign-slot-value packet '(:struct packet)
 					     'length))))))
 
 (defun set-midi-callback (source status handle)
@@ -199,7 +199,7 @@ input port."
 
 (cffi:defcallback midi-notify-proc :void ((message :pointer) (ref-con :pointer))
   (declare (ignorable message ref-con))
-  (cffi:with-foreign-slots ((message-id message-size) message (:struct midi-notification))
+  (cffi:with-foreign-slots ((message-id message-size) message (:struct notification))
     (handler-case
 	(dolist (h *midi-notify-handler*)
 	  (funcall h message-id message-size))

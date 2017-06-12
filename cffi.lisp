@@ -29,6 +29,10 @@
 (cffi:defctype object-ref :unsigned-int
   "The base class of many CoreMIDI objects.")
 
+(cffi:defcstruct notification
+  (message-id :int)
+  (message-size :unsigned-int))
+
 (cffi:defctype device-ref :unsigned-int
   "A MIDI device or external device, containing entities.")
 
@@ -47,27 +51,106 @@
 (cffi:defctype time-stamp :unsigned-long-long
   "A host clock time.")
 
+(cffi:defcstruct packet
+  (time-stamp time-stamp)
+  (length :unsigned-short)
+  (data :unsigned-char :count 256))
+
+(cffi:defcstruct packet-list
+  (num-packets :unsigned-int)
+  (packet (:struct packet) :count 1))
+
+
 
 ;; ==========================================================================
-;; MIDI Devices
+;; MIDI Ports
 ;; ==========================================================================
 
-(cffi:defcfun (device-get-entity "MIDIDeviceGetEntity") entity-ref
-  "Returns one of a given device's entities."
-  (device device-ref)
-  (entity-index-0 :int))
+(cffi:defcfun (input-port-create "MIDIInputPortCreate") :int
+  "Creates an input port.
+The client may receive incoming MIDI messages from any MIDI source."
+  (client client-ref)
+  (port-name :pointer)
+  (read-proc :pointer)
+  (ref-con :pointer)
+  (in-port :pointer))
 
-(cffi:defcfun (device-get-number-of-entities "MIDIDeviceGetNumberOfEntities")
-    :int
-  "Returns the number of entities in a given device."
-  (device device-ref))
+(cffi:defcfun (output-port-create "MIDIOutputPortCreate") :int
+  "Creates an output port.
+The client may send outgoing MIDI messages to any MIDI destination."
+  (client client-ref)
+  (port-name :pointer)
+  (out-port :pointer))
 
-(cffi:defcfun (get-device "MIDIGetDevice") device-ref
-  "Returns one of the devices in the system."
-  (device-index-0 :int))
+(cffi:defcfun (port-connect-source "MIDIPortConnectSource") :int
+  "Establishes a connection from a source to a client's input port."
+  (port port-ref)
+  (source endpoint-ref)
+  (conn-ref-con :pointer))
 
-(cffi:defcfun (get-number-of-devices "MIDIGetNumberOfDevices") :int
-  "Returns the number of devices in the system.")
+(cffi:defcfun (port-disconnect-source "MIDIPortDisconnectSource") :int
+  "Closes a previously-established source-to-input port connection."
+  (port port-ref)
+  (source endpoint-ref))
+
+(cffi:defcfun (port-dispose "MIDIPortDispose") :int
+  "Disposes a MIDIPort object."
+  (port port-ref))
+
+
+;; ==========================================================================
+;; MIDI Packet Lists
+;; ==========================================================================
+
+(cffi:defcfun (packet-list-add "MIDIPacketListAdd") :pointer
+  "Add a MIDI event to a MIDIPacketList."
+  (pktlist :pointer)
+  (list-size :int)
+  (cur-packet :pointer)
+  (time time-stamp)
+  (n-data :int)
+  (data :pointer))
+
+(cffi:defcfun (packet-list-init "MIDIPacketListInit") :pointer
+  "Prepares a MIDIPacketList to be built up dynamically."
+  (pktlist :pointer))
+
+(cffi:defcfun (packet-next "MIDIPacketNext") :pointer
+  "Advances a MIDIPacket pointer.
+The pointer is advanced to the MIDIPacket that immediately follows a given
+packet in memory, for packets that are part of a MIDIPacketList array."
+  (pkt :pointer))
+
+
+;; ==========================================================================
+;; MIDI I/O
+;; ==========================================================================
+
+(cffi:defcfun (flush-output "MIDIFlushOutput") :int
+  "Unschedules previously-sent packets."
+  (dest endpoint-ref))
+
+(cffi:defcfun (received "MIDIReceived") :int
+  "Distributes incoming MIDI from a source.
+MIDI is distributed to the client input ports which are connected to that
+source."
+  (src endpoint-ref)
+  (pktlist :pointer))
+
+;; #### NOTE: exception to the naming scheme, to avoid colliding with Common
+;; Lisp's RESTART.
+(cffi:defcfun (rescan "MIDIRestart") :int
+  "Stops and restarts MIDI I/O.")
+
+(cffi:defcfun (send "MIDISend") :int
+  "Sends MIDI to a destination."
+  (port port-ref)
+  (destination endpoint-ref)
+  (pktlist :pointer))
+
+(cffi:defcfun (send-sysex "MIDISendSysex") :int
+  "Sends a single system-exclusive event, asynchronously."
+  (request :pointer))
 
 
 ;; ==========================================================================
@@ -145,6 +228,28 @@
 
 
 ;; ==========================================================================
+;; MIDI Devices
+;; ==========================================================================
+
+(cffi:defcfun (device-get-entity "MIDIDeviceGetEntity") entity-ref
+  "Returns one of a given device's entities."
+  (device device-ref)
+  (entity-index-0 :int))
+
+(cffi:defcfun (device-get-number-of-entities "MIDIDeviceGetNumberOfEntities")
+    :int
+  "Returns the number of entities in a given device."
+  (device device-ref))
+
+(cffi:defcfun (get-device "MIDIGetDevice") device-ref
+  "Returns one of the devices in the system."
+  (device-index-0 :int))
+
+(cffi:defcfun (get-number-of-devices "MIDIGetNumberOfDevices") :int
+  "Returns the number of devices in the system.")
+
+
+;; ==========================================================================
 ;; MIDI Clients
 ;; ==========================================================================
 
@@ -160,99 +265,9 @@
   (client client-ref))
 
 
-;; ==========================================================================
-;; MIDI Ports
-;; ==========================================================================
-
-(cffi:defcfun (input-port-create "MIDIInputPortCreate") :int
-  "Creates an input port.
-The client may receive incoming MIDI messages from any MIDI source."
-  (client client-ref)
-  (port-name :pointer)
-  (read-proc :pointer)
-  (ref-con :pointer)
-  (in-port :pointer))
-
-(cffi:defcfun (output-port-create "MIDIOutputPortCreate") :int
-  "Creates an output port.
-The client may send outgoing MIDI messages to any MIDI destination."
-  (client client-ref)
-  (port-name :pointer)
-  (out-port :pointer))
-
-(cffi:defcfun (port-connect-source "MIDIPortConnectSource") :int
-  "Establishes a connection from a source to a client's input port."
-  (port port-ref)
-  (source endpoint-ref)
-  (conn-ref-con :pointer))
-
-(cffi:defcfun (port-disconnect-source "MIDIPortDisconnectSource") :int
-  "Closes a previously-established source-to-input port connection."
-  (port port-ref)
-  (source endpoint-ref))
-
-(cffi:defcfun (port-dispose "MIDIPortDispose") :int
-  "Disposes a MIDIPort object."
-  (port port-ref))
 
 
-;; ==========================================================================
-;; MIDI Packet Lists
-;; ==========================================================================
-
-(cffi:defcfun (packet-list-add "MIDIPacketListAdd") :pointer
-  "Add a MIDI event to a MIDIPacketList."
-  (pktlist :pointer)
-  (list-size :int)
-  (cur-packet :pointer)
-  (time time-stamp)
-  (n-data :int)
-  (data :pointer))
-
-(cffi:defcfun (packet-list-init "MIDIPacketListInit") :pointer
-  "Prepares a MIDIPacketList to be built up dynamically."
-  (pktlist :pointer))
-
-(cffi:defcfun (packet-next "MIDIPacketNext") :pointer
-  "Advances a MIDIPacket pointer.
-The pointer is advanced to the MIDIPacket that immediately follows a given
-packet in memory, for packets that are part of a MIDIPacketList array."
-  (pkt :pointer))
-
-
-
-;; ==========================================================================
-;; MIDI I/O
-;; ==========================================================================
-
-(cffi:defcfun (flush-output "MIDIFlushOutput") :int
-  "Unschedules previously-sent packets."
-  (dest endpoint-ref))
-
-(cffi:defcfun (received "MIDIReceived") :int
-  "Distributes incoming MIDI from a source.
-MIDI is distributed to the client input ports which are connected to that
-source."
-  (src endpoint-ref)
-  (pktlist :pointer))
-
-;; #### NOTE: exception to the naming scheme, to avoid colliding with Common
-;; Lisp's RESTART.
-(cffi:defcfun (rescan "MIDIRestart") :int
-  "Stops and restarts MIDI I/O.")
-
-(cffi:defcfun (send "MIDISend") :int
-  "Sends MIDI to a destination."
-  (port port-ref)
-  (destination endpoint-ref)
-  (pktlist :pointer))
-
-(cffi:defcfun (send-sysex "MIDISendSysex") :int
-  "Sends a single system-exclusive event, asynchronously."
-  (request :pointer))
-
-
-
+;; #### FIXME: elsewhere
 ;;; with-cfstring
 (defconstant +k-cf-string-encoding-utf-8+ #x08000100)
 
@@ -272,6 +287,7 @@ source."
        ,@(loop for form in bindings
 	       collect `(cffi:foreign-funcall "CFRelease" :pointer ,(car form))))))
 
+;; #### FIXME: elsewhere
 ;;; Property of MIDI-OBJECT
 (defun midiobject-display-name (midiobject)
   "Returns the name of a given midiobject."
@@ -289,17 +305,3 @@ source."
 						 :int +k-cf-string-encoding-utf-8+)
       (cffi:foreign-funcall "CFRelease" :pointer (cffi:mem-ref cfstring :pointer))
       (cffi:foreign-string-to-lisp char :encoding :utf-8))))
-
-(cffi:defcstruct +midi-packet+
-  (time-stamp-high :unsigned-int)
-  (time-stamp-low :unsigned-int)
-  (length :unsigned-short)
-  (data :unsigned-char :count 256))
-
-(cffi:defcstruct +midi-packet-list+
-  (num-packets :unsigned-int)
-  (packet (:struct +midi-packet+) :count 1))
-
-(cffi:defcstruct midi-notification
-  (message-id :int)
-  (message-size :unsigned-int))
