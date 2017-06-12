@@ -44,6 +44,9 @@
 (cffi:defctype port-ref :unsigned-int
   "A MIDI connection port owned by a client.")
 
+(cffi:defctype time-stamp :unsigned-long-long
+  "A host clock time.")
+
 
 ;; ==========================================================================
 ;; MIDI Devices
@@ -193,6 +196,50 @@ The client may send outgoing MIDI messages to any MIDI destination."
   (port port-ref))
 
 
+;; ==========================================================================
+;; MIDI Packet Lists
+;; ==========================================================================
+
+(cffi:defcfun (packet-list-add "MIDIPacketListAdd") :pointer
+  "Add a MIDI event to a MIDIPacketList."
+  (pktlist :pointer)
+  (list-size :int)
+  (cur-packet :pointer)
+  (time time-stamp)
+  (n-data :int)
+  (data :pointer))
+
+(cffi:defcfun (packet-list-init "MIDIPacketListInit") :pointer
+  "Prepares a MIDIPacketList to be built up dynamically."
+  (pktlist :pointer))
+
+(cffi:defcfun (packet-next "MIDIPacketNext") :pointer
+  "Advances a MIDIPacket pointer.
+The pointer is advanced to the MIDIPacket that immediately follows a given
+packet in memory, for packets that are part of a MIDIPacketList array."
+  (pkt :pointer))
+
+
+
+;; ==========================================================================
+;; MIDI I/O
+;; ==========================================================================
+
+(cffi:defcfun "MIDISend" :int
+  "Sends MIDI to a destination."
+  (port object-ref)
+  (destination object-ref)
+  (pktlist :pointer))
+
+(cffi:defcfun (midi-received "MIDIReceived") :int
+  "Distributes incoming MIDI from a source to the client input ports which are connected to that source."
+  (src object-ref)
+  (mktlist :pointer))
+
+(cffi:defcfun (midi-restart "MIDIRestart") :int
+  "Stops and restarts MIDI I/O. This is useful for forcing CoreMIDI to ask its dirvers to rescan for hardware.")
+
+
 ;;; with-cfstring
 (defconstant +k-cf-string-encoding-utf-8+ #x08000100)
 
@@ -230,10 +277,6 @@ The client may send outgoing MIDI messages to any MIDI destination."
       (cffi:foreign-funcall "CFRelease" :pointer (cffi:mem-ref cfstring :pointer))
       (cffi:foreign-string-to-lisp char :encoding :utf-8))))
 
-
-
-;;; MIDIPacket
-
 (cffi:defcstruct +midi-packet+
   (time-stamp-high :unsigned-int)
   (time-stamp-low :unsigned-int)
@@ -244,37 +287,6 @@ The client may send outgoing MIDI messages to any MIDI destination."
   (num-packets :unsigned-int)
   (packet (:struct +midi-packet+) :count 1))
 
-(cffi:defcfun (packet-list-init "MIDIPacketListInit") :pointer
-  "Prepares a MIDIPacketList to be built up dynamically."
-  (pktlist :pointer))
-
-(cffi:defcfun (packet-list-add "MIDIPacketListAdd") :pointer
-  "Add a MIDI event to a MIDIPacketList."
-  (pktlist :pointer)
-  (limit-size :int)
-  (packet :pointer)
-  (time :unsigned-long-long)
-  (data-size :int)
-  (data :pointer))
-
-
-;;; MIDI I/O
-(cffi:defcfun "MIDISend" :int
-  "Sends MIDI to a destination."
-  (port object-ref)
-  (destination object-ref)
-  (pktlist :pointer))
-
-(cffi:defcfun (midi-received "MIDIReceived") :int
-  "Distributes incoming MIDI from a source to the client input ports which are connected to that source."
-  (src object-ref)
-  (mktlist :pointer))
-
-(cffi:defcfun (midi-restart "MIDIRestart") :int
-  "Stops and restarts MIDI I/O. This is useful for forcing CoreMIDI to ask its dirvers to rescan for hardware.")
-
-
 (cffi:defcstruct midi-notification
   (message-id :int)
   (message-size :unsigned-int))
-

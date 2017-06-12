@@ -36,6 +36,10 @@
     #:port-connect-source
     #:port-disconnect-source
     #:port-dispose
+    ;; MIDI Packet Lists:
+    #:packet-list-add
+    #:packet-list-init
+    #:packet-next
 
     #:initialize
     #:midi-restart
