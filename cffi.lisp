@@ -122,6 +122,9 @@ packet in memory, for packets that are part of a MIDIPacketList array."
   (pkt :pointer))
 
 
+;; #### FIXME: MIDI Objects and Properties section here.
+
+
 ;; ==========================================================================
 ;; MIDI I/O
 ;; ==========================================================================
@@ -151,6 +154,20 @@ source."
 (cffi:defcfun (send-sysex "MIDISendSysex") :int
   "Sends a single system-exclusive event, asynchronously."
   (request :pointer))
+
+
+;; ==========================================================================
+;; MIDI External Devices
+;; ==========================================================================
+
+(cffi:defcfun (get-external-device "MIDIGetExternalDevice") device-ref
+  "Returns one of the external devices in the system."
+  (device-index-0 :int))
+
+(cffi:defcfun
+    (get-number-of-external-devices "MIDIGetNumberOfExternalDevices")
+    :int
+  "Returns the number of external MIDI devices in the system.")
 
 
 ;; ==========================================================================
