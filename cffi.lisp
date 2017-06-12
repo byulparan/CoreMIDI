@@ -33,6 +33,9 @@
   (message-id :int)
   (message-size :unsigned-int))
 
+(cffi:defctype unique-id :int
+  "A unique identifier for a MIDIObjectRef.")
+
 (cffi:defctype device-ref :unsigned-int
   "A MIDI device or external device, containing entities.")
 
@@ -122,7 +125,17 @@ packet in memory, for packets that are part of a MIDIPacketList array."
   (pkt :pointer))
 
 
-;; #### FIXME: MIDI Objects and Properties section here.
+;; ==========================================================================
+;; MIDI Objects and Properties
+;; ==========================================================================
+
+(cffi:defcfun (object-find-by-unique-id "MIDIObjectFindByUniqueID") :int
+  "Locates a device, external device, entity, or endpoint by its uniqueID."
+  (in-unique-id unique-id)
+  (out-object :pointer)
+  (out-object-type :pointer))
+
+
 
 
 ;; ==========================================================================

@@ -40,6 +40,8 @@
     #:packet-list-add
     #:packet-list-init
     #:packet-next
+    ;; MIDI Objects and Properties:
+    #:object-find-by-unique-id
     ;; MIDI I/O:
     #:flush-output
     #:received
