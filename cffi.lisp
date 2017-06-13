@@ -130,7 +130,31 @@ packet in memory, for packets that are part of a MIDIPacketList array."
   (out-object :pointer)
   (out-object-type :pointer))
 
+;; Slightly higher level than the actual CoreMIDI function to manipulate lisp
+;; strings directly. Note the absence of GET in the name.
+(defun object-string-property (object-ref property)
+  "Wrapper around MIDIObjectGetStringProperty.
+Return the value of PROPERTY (a Lisp string) in OBJECT-REF as a Lisp string as
+well."
+  ;; #### FIXME: we need to handle errors.
+  (cffi:with-foreign-objects ((cf-string :pointer)
+			      (string :char 1024))
+    (with-cf-strings ((cf-property property))
+      (cffi:foreign-funcall "MIDIObjectGetStringProperty"
+	object-ref object-ref
+	:pointer cf-property
+	:pointer cf-string
+	:int)
+      (cffi:foreign-funcall "CFStringGetCString"
+	:pointer (cffi:mem-ref cf-string :pointer)
+	:pointer string
+	:int 1024
+	:int +k-cf-string-encoding-utf-8+)
+      (cffi:foreign-funcall "CFRelease"
+	:pointer (cffi:mem-ref cf-string :pointer))
+      (cffi:foreign-string-to-lisp string :encoding :utf-8))))
 
+;; #### FIXME: implement the rest.
 
 
 ;; ==========================================================================
@@ -288,25 +312,3 @@ source."
 (cffi:defcfun (client-dispose "MIDIClientDispose") :int
   "Disposes a MIDIClient object."
   (client client-ref))
-
-
-
-
-;; #### FIXME: elsewhere
-;;; Property of MIDI-OBJECT
-(defun midiobject-display-name (midiobject)
-  "Returns the name of a given midiobject."
-  (cffi:with-foreign-objects ((cfstring :pointer)
-			      (char :char 1024))
-    (with-cf-strings ((property "displayName"))
-      (cffi:foreign-funcall "MIDIObjectGetStringProperty"
-			    :int midiobject
-			    :pointer property
-			    :pointer cfstring
-			    :int)
-      (cffi:foreign-funcall "CFStringGetCString" :pointer (cffi:mem-ref cfstring :pointer)
-						 :pointer char
-						 :int 1024
-						 :int +k-cf-string-encoding-utf-8+)
-      (cffi:foreign-funcall "CFRelease" :pointer (cffi:mem-ref cfstring :pointer))
-      (cffi:foreign-string-to-lisp char :encoding :utf-8))))

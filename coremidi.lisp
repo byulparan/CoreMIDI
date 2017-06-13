@@ -1,5 +1,9 @@
 (in-package :midi)
 
+(defun display-name (object)
+  "Return OBJECT's display name property."
+  (object-string-property object "displayName"))
+
 (defun all-endpoints (direction)
   (multiple-value-bind (number-f get-f)
       (ecase direction
@@ -13,25 +17,25 @@
   (let ((all-sources (all-endpoints :input)))
     (loop for src in all-sources
 	  for i from 0
-	  do (format t "~2d:  ~a~%" i (midiobject-display-name src)))))
+	  do (format t "~2d:  ~a~%" i (display-name src)))))
 
 (defun list-of-destinations ()
   "print the name of destinations in system."
   (let ((all-dest (all-endpoints :output)))
     (loop for dst in all-dest
 	  for i from 0
-	  do (format t "~2d:  ~a~%" i (midiobject-display-name dst)))))
+	  do (format t "~2d:  ~a~%" i (display-name dst)))))
 
 
 (defun find-source (name)
   "Returns a source which has a same name."
   (find name (all-endpoints :input)
-	:test #'string= :key #'midiobject-display-name))
+	:test #'string= :key #'display-name))
 
 (defun find-destination (name)
   "Returns a destination which has a same name."
   (find name (all-endpoints :output)
-	:test #'string= :key #'midiobject-display-name))
+	:test #'string= :key #'display-name))
 
 
 (defvar *midi-client* nil
