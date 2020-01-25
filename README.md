@@ -1,21 +1,18 @@
 # CoreMIDI
 **The wrapper of CoreMIDI Framework for Common Lisp**
 
-### version: 2017.3.14
-
 #### require:
 please check version of dependency library.
 
 
 - MacOSX
 - [Quicklisp](http://www.quicklisp.org)
-- [Scheduler](http://github.com/byulparan/scheduler)(above 2017.3.14)
 - [ClozureCL](http://www.clozure.com/clozurecl.html) or [SBCL](http://www.sbcl.org) or [ECL](http://ecls.sourceforge.net)
 
 #### install note:
 	It include objective-C file. because MIDIinput-handle callback is invoked from a separate C thread
-	It called foreign-thread callback.	Currently, It support only ClozureCL.
-	so in SBCL,ECL used wrapper objC-library for resolve that problem.
+	It called foreign-thread callback.	Currently, It support SBCL/ClozureCL.
+	so in ECL used wrapper objC-library for resolve that problem.
 	That objC library will build automatically when You load CoreMIDI lisp library.
 
 #### package: midi
@@ -31,12 +28,11 @@ please check version of dependency library.
 ```cl	
 (ql:quickload :coremidi)
 
-(midi:coremidi-start)
+(midi:initialize)
 
 (midi:set-midi-callback (midi:get-source 0) :note-on
 		(lambda (chan note vel)
 		  (format t "channel: ~d  notenum: ~d  velocity: ~d~%" chan note vel)))
-
 
 (midi:midi-send (midi:get-destination 0) (+ (cb:now) 2) :note-on 1 60 100)
 ```
