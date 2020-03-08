@@ -49,11 +49,8 @@
 (cffi:defctype time-stamp :unsigned-long-long
   "A host clock time.")
 
-;;; 'struct MIDIPacket' in MIDIServices.h are set to alignment via #pragma pack(push, 4) .
-;;; so sizeof(struct MIDIPacket) are 268 byte.
 (cffi:defcstruct packet
-  (time-stamp-high :unsigned-int)  ;; if I use time-stamp(:unsigned-long-long), then packet size are 272 byte.
-  (time-stamp-low :unsigned-int)
+  (time-stamp time-stamp)
   (length :unsigned-short)
   (data :unsigned-char :count 256))
 
