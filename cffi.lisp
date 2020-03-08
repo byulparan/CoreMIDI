@@ -1,6 +1,6 @@
 (in-package :midi)
 
-#-(or sbcl ccl)
+#-ccl
 (handler-case
     (let* ((dir (concatenate 'string
 		  (namestring (asdf:system-source-directory :coremidi))
@@ -11,7 +11,7 @@
       (cffi:load-foreign-library file))
   (error ())) ;; #### FIXME: WTF?
 
-#+(or sbcl ccl)
+#+ccl
 (progn
   (cffi:define-foreign-library coremidi (:darwin (:framework "CoreMIDI")))
   (cffi:use-foreign-library coremidi))
