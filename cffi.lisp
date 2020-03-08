@@ -4,8 +4,8 @@
 (handler-case
     (let* ((dir (concatenate 'string
 		  (namestring (asdf:system-source-directory :coremidi))
-		  "ObjectiveC/"))
-	   (file (concatenate 'string dir "libwrapper.dylib")))
+		  "C/"))
+	   (file (concatenate 'string dir "libcoremidi_wrapper.dylib")))
       (unless (probe-file file)
 	(uiop:run-program (concatenate 'string "make -C " dir) :output t))
       (cffi:load-foreign-library file))

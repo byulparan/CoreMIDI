@@ -1,4 +1,4 @@
-PKG := wrapper
+PKG := coremidi_wrapper
 
 SRC := $(PKG).m
 OBJ := $(PKG).o
