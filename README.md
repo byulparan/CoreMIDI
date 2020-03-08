@@ -11,14 +11,14 @@ please check version of dependency library.
 
 #### install note:
 	It include objective-C file. because MIDIinput-handle callback is invoked from a separate C thread
-	It called foreign-thread callback.	Currently, It support SBCL/ClozureCL.
-	so in ECL used wrapper objC-library for resolve that problem.
+	It called foreign-thread callback.	Currently, It support ClozureCL only.
+	so in SBCL/ECL used wrapper objC-library for resolve that problem.
 	That objC library will build automatically when You load CoreMIDI lisp library.
 
 #### package: midi
 
 #### usage:
-- `coremidi-start`  load coremidi resources and initialize it. 
+- `initialize`  load coremidi resources and initialize it. 
 - `list-of-sources` print all midi sources in the system.
 - `set-midi-callback` register callback function for midi-input message from source(currently it supoort :note-on, :note-off, :cc, :bend).
 - `list-of-destinations`	print all midi destinations in the system.
