@@ -182,7 +182,7 @@ input port."
 			(cffi:mem-ref endpoint 'object-ref))))
 		   (cffi:foreign-funcall "pthread_cond_signal"
 		     :pointer handled))))
-	     :name "Incoming packets handler")))))
+	     :name "Incoming MIDI packets handle thread")))))
 
 (defvar *midi-notify-handler* nil)
 
