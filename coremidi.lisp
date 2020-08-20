@@ -78,7 +78,7 @@ input port."
 ;;; CCL has FOREIGN-THREAD-CALLBACK, so we can provide the callback function
 ;;; below directly to the system. In other implementations, we need a C
 ;;; wrapper.
-#+ccl
+#+(or ccl lispworks)
 (cffi:defcallback handle-incoming-packets :void ((pktlist :pointer)
 						 (read-proc-ref-con :pointer)
 						 (src-conn-ref-con :pointer))
@@ -151,7 +151,7 @@ input port."
     (endpoint-dispose end-pnt))
   (client-dispose (getf client :client)))
 
-#-ccl
+#-(or ccl lispworks)
 (let (thread)
   (defun create-incoming-packets-handler-thread ()
     (unless thread
@@ -224,13 +224,13 @@ input port."
 		       client)
 	(let ((client (cffi:mem-ref client 'object-ref)))
 	  (input-port-create client in-portname
-			     #+ccl(cffi:callback handle-incoming-packets)
-			     #-ccl(cffi:foreign-symbol-pointer
-				   "handleIncomingPackets")
+			     #+(or ccl lispworks) (cffi:callback handle-incoming-packets)
+			     #-(or ccl lispworks)(cffi:foreign-symbol-pointer
+				      "handleIncomingPackets")
 			     (cffi-sys:null-pointer)
 			     in-port)
 	  (output-port-create client out-portname out-port)
-	  #-ccl (create-incoming-packets-handler-thread)
+	  #-(or ccl lispworks) (create-incoming-packets-handler-thread)
 	  (setf *midi-client*
 		(list :client client
 		      :in-port (cffi:mem-ref in-port 'object-ref)
