@@ -13,7 +13,7 @@
 
 #+(or ccl lispworks)
 (progn
-  (cffi:define-foreign-library coremidi (:darwin "/System/Library/Frameworks/CoreMIDI.framework/CoreMIDI"))
+  (cffi:define-foreign-library coremidi (:darwin (:framework "CoreMIDI")))
   (cffi:use-foreign-library coremidi))
 
 
