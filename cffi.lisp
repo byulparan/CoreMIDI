@@ -5,7 +5,7 @@
     (let* ((dir (concatenate 'string
 		  (namestring (asdf:system-source-directory :coremidi))
 		  "C/"))
-	   (file (concatenate 'string dir "libcoremidi_wrapper.dylib")))
+	   (file (concatenate 'string dir "libcoremidi-wrapper.dylib")))
       (unless (probe-file file)
 	(uiop:run-program (concatenate 'string "make -C " dir) :output t))
       (cffi:load-foreign-library file))

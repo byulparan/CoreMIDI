@@ -1,4 +1,4 @@
-PKG := coremidi_wrapper
+PKG := coremidi-wrapper
 
 CFLAGS = -arch arm64 -arch x86_64
 SRC := $(PKG).m
