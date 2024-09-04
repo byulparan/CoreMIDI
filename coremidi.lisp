@@ -65,13 +65,17 @@ input port."
 							 (cffi:mem-aref data :unsigned-char (+ i 1)))
 				     0))
 			  (incf i 3)))
-		  (otherwise (progn (alexandria:when-let* 
-					((value (cffi:mem-aref data :unsigned-char (+ i 2)))
-					 (handle (get-handle source (cond ((or (= status #x80) (and (= status #x90) (zerop value))) :note-off)
-									  ((= status #x90) :note-on)
-									  ((= status #xB0) :cc)))))
-				      (funcall handle chan (cffi:mem-aref data :unsigned-char (+ i 1)) value))
-				    (incf i 3))))))
+		  (#xB0 (progn (alexandria:when-let ((handle (get-handle source :cc))) ; cc
+				 (funcall handle chan (cffi:mem-aref data :unsigned-char (+ i 1)) (cffi:mem-aref data :unsigned-char (+ i 2))))
+			       (incf i 3)))
+		  (#x90 (progn (alexandria:when-let* ((value (cffi:mem-aref data :unsigned-char (+ i 2))) ; note-on or note-off(when vel==0)
+						      (handle (get-handle source (if (zerop value) :note-off :note-on))))
+				 (funcall handle chan (cffi:mem-aref data :unsigned-char (+ i 1)) value))
+			       (incf i 3)))
+		  (#x80 (progn (alexandria:when-let ((handle (get-handle source :note-off))) ; note-off
+				 (funcall handle chan (cffi:mem-aref data :unsigned-char (+ i 1)) (cffi:mem-aref data :unsigned-char (+ i 2))))
+			       (incf i 3)))
+		  (otherwise (incf i 1))))) ;;ignore rest MIDI message
 	  (error (c) (format t "error ~a in coremidi handle thread~%" c)))))))
 
 
